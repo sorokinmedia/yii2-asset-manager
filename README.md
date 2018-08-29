@@ -1,0 +1,1 @@
+# Yii2 asset manager with deployer for front repositories and caching
