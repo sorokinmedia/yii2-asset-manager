@@ -46,7 +46,7 @@ class AssetManager extends \yii\web\AssetManager
         }
 
         if(!is_null($this->assetVersion)) {
-            return "$baseUrl/$asset?" . md5($this->assetVersion);
+            return "$baseUrl/$asset?v=" . md5($this->assetVersion);
         }
 
         return "$baseUrl/$asset";
