@@ -1,7 +1,10 @@
 <?php
+
 namespace sorokinmedia\asset_manager;
 
+use Yii;
 use yii\helpers\Url;
+use yii\web\AssetBundle;
 
 /**
  * Class AssetManager
@@ -11,12 +14,12 @@ use yii\helpers\Url;
  */
 class AssetManager extends \yii\web\AssetManager
 {
-    public $assetVersion = null;
+    public $assetVersion;
 
     /**
      * Returns the actual URL for the specified asset.
      * The actual URL is obtained by prepending either [[baseUrl]] or [[AssetManager::baseUrl]] to the given asset path.
-     * @param \yii\web\AssetBundle $bundle the asset bundle which the asset file belongs to
+     * @param AssetBundle $bundle the asset bundle which the asset file belongs to
      * @param string $asset the asset path. This should be one of the assets listed in [[js]] or [[css]].
      * @return string the actual URL for the specified asset.
      */
@@ -25,10 +28,10 @@ class AssetManager extends \yii\web\AssetManager
         if (($actualAsset = $this->resolveAsset($bundle, $asset)) !== false) {
             if (strncmp($actualAsset, '@web/', 5) === 0) {
                 $asset = substr($actualAsset, 5);
-                $basePath = \Yii::getAlias('@webroot');
-                $baseUrl = \Yii::getAlias('@web');
+                $basePath = Yii::getAlias('@webroot');
+                $baseUrl = Yii::getAlias('@web');
             } else {
-                $asset = \Yii::getAlias($actualAsset);
+                $asset = Yii::getAlias($actualAsset);
                 $basePath = $this->basePath;
                 $baseUrl = $this->baseUrl;
             }
@@ -45,7 +48,7 @@ class AssetManager extends \yii\web\AssetManager
             return "$baseUrl/$asset?v=$timestamp";
         }
 
-        if(!is_null($this->assetVersion)) {
+        if ($this->assetVersion !== null) {
             return "$baseUrl/$asset?v=" . md5($this->assetVersion);
         }
 

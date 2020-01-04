@@ -1,11 +1,16 @@
 <?php
+
 namespace sorokinmedia\asset_manager;
+
+use Yii;
+use yii\base\Action;
+use yii\console\Controller;
 
 /**
  * Class DeployController
  * @package sorokinmedia\asset_manager
  */
-class DeployController extends \yii\console\Controller
+class DeployController extends Controller
 {
     public $defaultAction = 'prod';
 
@@ -14,15 +19,15 @@ class DeployController extends \yii\console\Controller
     public $backendAppearanceAssetsPath;
 
     /**
-     * @param \yii\base\Action $action
+     * @param Action $action
      * @return bool
      */
     public function beforeAction($action)
     {
-        $this->frontendRepo = \Yii::getAlias('@react') . '/dsts-rental-service-front';
+        $this->frontendRepo = Yii::getAlias('@react') . '/dsts-rental-service-front';
 
-        $this->frontendAppearanceAssetsPath = \Yii::getAlias('@root') . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'web'. DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . '*';
-        $this->backendAppearanceAssetsPath = \Yii::getAlias('@root') . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'web'. DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . '*';
+        $this->frontendAppearanceAssetsPath = Yii::getAlias('@root') . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . 'web' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . '*';
+        $this->backendAppearanceAssetsPath = Yii::getAlias('@root') . DIRECTORY_SEPARATOR . 'backend' . DIRECTORY_SEPARATOR . 'web' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . '*';
 
         return parent::beforeAction($action);
     }
@@ -48,38 +53,11 @@ class DeployController extends \yii\console\Controller
     }
 
     /**
-     * для прода с инсталом
+     * Спуллить все репы в состояние мастер
      */
-    public function actionProdInstall()
+    public function actionPullMaster()
     {
-        $this->actionPullMaster();
-        $this->actionNpmInstall();
-        $this->actionBuild();
-        $this->actionFlush();
-        $this->actionFlushYii();
-    }
-
-    /**
-     * для дева
-     */
-    public function actionDev()
-    {
-        $this->actionPull();
-        $this->actionBuild();
-        $this->actionFlush();
-        $this->actionFlushYii();
-    }
-
-    /**
-     * для дева с инсталом
-     */
-    public function actionDevInstall()
-    {
-        $this->actionPull();
-        $this->actionNpmInstall();
-        $this->actionBuild();
-        $this->actionFlush();
-        $this->actionFlushYii();
+        shell_exec("cd {$this->frontendRepo}; git checkout master; git pull;"); // перекачаем верстку
     }
 
     /**
@@ -92,37 +70,12 @@ class DeployController extends \yii\console\Controller
     }
 
     /**
-     * запускает npm install
-     */
-    public function actionNpmInstall()
-    {
-        shell_exec("cd {$this->frontendRepo}; npm i;"); // перекачаем мастер
-        echo 'build finished';
-    }
-
-    /**
-     * Спуллить все репы в их текущих ветках
-     */
-    public function actionPull()
-    {
-        shell_exec("cd {$this->frontendRepo}; git pull;"); // перекачаем компоненты
-    }
-
-    /**
-     * Спуллить все репы в состояние мастер
-     */
-    public function actionPullMaster()
-    {
-        shell_exec("cd {$this->frontendRepo}; git checkout master; git pull;"); // перекачаем верстку
-    }
-
-    /**
      * Почистить кэш асетов
      */
     public function actionFlush()
     {
-        if(!file_exists(AssetVersion::assetConfigPath())) { // версия ассэтов хранится в файле, если файл не существует - создаем
-            $assetVersionFile = fopen(AssetVersion::assetConfigPath(), "w");
+        if (!file_exists(AssetVersion::assetConfigPath())) { // версия ассэтов хранится в файле, если файл не существует - создаем
+            $assetVersionFile = fopen(AssetVersion::assetConfigPath(), 'wb');
             fwrite($assetVersionFile, 0);
             fclose($assetVersionFile);
         }
@@ -138,8 +91,60 @@ class DeployController extends \yii\console\Controller
      */
     public function actionFlushYii()
     {
-        shell_exec("php yii cache/flush-all");
+        shell_exec('php yii cache/flush-all');
         echo 'yii cache flushed' . PHP_EOL;
+    }
+
+    /**
+     * для прода с инсталом
+     */
+    public function actionProdInstall()
+    {
+        $this->actionPullMaster();
+        $this->actionNpmInstall();
+        $this->actionBuild();
+        $this->actionFlush();
+        $this->actionFlushYii();
+    }
+
+    /**
+     * запускает npm install
+     */
+    public function actionNpmInstall()
+    {
+        shell_exec("cd {$this->frontendRepo}; npm i;"); // перекачаем мастер
+        echo 'build finished';
+    }
+
+    /**
+     * для дева
+     */
+    public function actionDev()
+    {
+        $this->actionPull();
+        $this->actionBuild();
+        $this->actionFlush();
+        $this->actionFlushYii();
+    }
+
+    /**
+     * Спуллить все репы в их текущих ветках
+     */
+    public function actionPull()
+    {
+        shell_exec("cd {$this->frontendRepo}; git pull;"); // перекачаем компоненты
+    }
+
+    /**
+     * для дева с инсталом
+     */
+    public function actionDevInstall()
+    {
+        $this->actionPull();
+        $this->actionNpmInstall();
+        $this->actionBuild();
+        $this->actionFlush();
+        $this->actionFlushYii();
     }
 
     /**
@@ -147,7 +152,7 @@ class DeployController extends \yii\console\Controller
      */
     public function actionCompress()
     {
-        $rootPath = \Yii::getAlias('@root') . DIRECTORY_SEPARATOR;
+        $rootPath = Yii::getAlias('@root') . DIRECTORY_SEPARATOR;
         shell_exec('for file in `find ' . $rootPath . ' -name \*.css -type f -o -name \*.js -type f -o -name \*.html -type f`;
         do gzip -9 -f -c $file > $file.gz;
         done');
